@@ -1,0 +1,377 @@
+---
+title: "Final_Project_WE_R"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+```{r}
+#setwd("/Users/ismailshaikh/Documents")
+```
+
+```{r cars}
+library(tidyverse)
+library(skimr)
+library(ggplot2)
+require(dplyr)
+require(tidyverse)
+require(ggplot2)
+require(dplyr)
+library("scales")
+
+```
+```{r}
+
+EU <- read.csv("E:/Classes/Data Science I/Assignments/Final_Proj/IT Salary Survey EU  2020.csv",na=c("", "NA"," ", ".", "9999", "Not Applicable"))
+head(EU)
+
+```
+
+```{r}
+
+#Renaming Columns
+colnames(EU) <- c("Timestamp","Age","Gender","City","Position","Total_years_of_experience","Years_of_experience_in_Germany",
+                  "Seniority_level","Programming_Language","Other_programming_languages","Yearly_salary_in_EUR","Yearly_bonus_EUR",
+                  "Annual_salary_without_bonus","Annual_bonus_stocks","vacation_days","Employment_status","contract_duration","Language",
+                  "Company_size","Company_type","lost_your_job_due_to_coronavirus_outbreak",
+                  "shorter_working_week_hour","monetary_support_from_your_employer_due_to_Work_From_Home")
+
+head(EU)
+
+```
+
+
+```{r}
+skim(EU)
+
+```
+
+```{r}
+
+#Changing the datatype
+EU <- EU%>% mutate(Age = as.numeric(Age),
+  Total_years_of_experience = as.numeric(Total_years_of_experience), 
+  Years_of_experience_in_Germany = as.numeric(Years_of_experience_in_Germany), 
+  Yearly_bonus_EUR = as.numeric(Yearly_bonus_EUR),
+  Annual_bonus_stocks = as.numeric(Annual_bonus_stocks), 
+  vacation_days = as.numeric(vacation_days), 
+  monetary_support_from_your_employer_due_to_Work_From_Home = as.numeric(monetary_support_from_your_employer_due_to_Work_From_Home)
+)
+```
+
+
+```{r}
+
+glimpse(EU)
+
+```
+```{r}
+
+#Removing null values
+new_data <- EU                                    # Duplicate data frame
+glimpse(new_data)
+
+
+
+```
+
+
+```{r}
+df <- new_data %>% mutate( Age  = ifelse(is.na( Age ),floor(mean(Age,na.rm = TRUE)),Age),
+                           Total_years_of_experience  = ifelse(is.na( Total_years_of_experience ),floor(mean(Total_years_of_experience,na.rm = TRUE)),Total_years_of_experience),
+                           Years_of_experience_in_Germany  = ifelse(is.na( Years_of_experience_in_Germany ),floor(mean(Years_of_experience_in_Germany,na.rm = TRUE)),Years_of_experience_in_Germany),
+                           Yearly_bonus_EUR  = ifelse(is.na( Yearly_bonus_EUR ),0,Yearly_bonus_EUR ),
+                     Annual_salary_without_bonus = ifelse(is.na(Annual_salary_without_bonus), 0, Annual_salary_without_bonus),
+                     Annual_bonus_stocks  = ifelse(is.na( Annual_bonus_stocks ), 0,  Annual_bonus_stocks),
+                     vacation_days  = ifelse(is.na( vacation_days ), 0,  vacation_days),
+                     Language  = ifelse(is.na(Language), 0,  Language),
+                     Company_type  = ifelse(is.na( Company_type ), "Unknown",  Company_type),
+                     shorter_working_week_hour  = ifelse(is.na( shorter_working_week_hour ), 0,  shorter_working_week_hour),
+                     monetary_support_from_your_employer_due_to_Work_From_Home  = ifelse(is.na( monetary_support_from_your_employer_due_to_Work_From_Home ), 0,  monetary_support_from_your_employer_due_to_Work_From_Home)
+                     )
+
+```
+
+```{r}
+
+df
+
+```
+**********************************DHANANJAY PANCHAL***********************************
+
+
+Let's Analyse about the Different Job Positions.
+
+Data Cleaning for Position
+```{r}
+new_df = rename(df, 'Position' = 'Position')
+
+new_df %>% group_by(Position) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count))
+
+
+```
+The most dominating Job Position is Software Engineer followed by Backend Developer, Data Scientist and Frontend Developer!
+
+```{r}
+f_df= new_df %>%select(Position) %>% group_by(Position) %>% summarize(count=n())%>% arrange(desc(count))
+
+d_df = f_df[1:10,]
+d_df %>% mutate(count = count)
+
+  ggplot(d_df, aes(x = Position, y = count, colour = Position)) + geom_point(size = 5) + ggtitle("Distribution - number of Position")+scale_x_discrete(name = "Programming_Languages") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+
+Now Look Into Salary of these Respective Job Positions:
+```{r}
+p_earnings = df %>% mutate(Total_Salary = Annual_salary_without_bonus + Annual_bonus_stocks) 
+  
+earnings = p_earnings %>% 
+  select(Position, Total_Salary) %>% 
+  group_by(Position) %>% 
+  summarize(Salary = sum(Total_Salary)) %>% 
+  arrange(desc(Salary))
+
+earnings
+
+f_earnings = earnings[2:10,]
+
+f_earnings
+
+ggp = ggplot(f_earnings, aes(Salary, reorder(Position, Salary), color = Position)) + geom_point(size = 5)
+
+ggp + scale_x_continuous(labels = comma)
+```
+Relationship between Programming Language/Technology and Yearly Salary
+
+
+```{r}
+n_data = p_earnings %>% mutate(Programming_Languages_Lower = tolower(p_earnings$Programming_Language))
+
+s_data = n_data %>%
+  select(Programming_Languages_Lower, Total_Salary) %>% 
+  group_by(Programming_Languages_Lower) %>% 
+  summarize(Count = n()) %>% 
+  arrange(desc(Count))
+
+s_Data = s_data[-c(3),]
+S_DATAA = s_Data[1:10,]
+S_DATAA
+```
+We can see that the Java and Python are the vastly used and most preferred languages by IT Professionals.
+
+Salary and Programming Language relationship Visualization
+
+```{r}
+t_data = n_data %>% 
+  select(Programming_Languages_Lower, Total_Salary) %>% 
+  group_by(Programming_Languages_Lower) %>% 
+  summarise(Total_SALARY = sum(Total_Salary)) %>% 
+  arrange(desc(Total_SALARY))
+
+t_Data = t_data[-c(1,4),]
+
+t_DATA = t_Data[1:10,]
+
+t_DATA
+
+GG = ggplot(t_DATA, aes( reorder(Programming_Languages_Lower, -Total_SALARY), Total_SALARY, color = Programming_Languages_Lower)) + geom_point(size = 5)
+
+GG + scale_y_continuous(labels = comma) + scale_x_discrete(name = "Programming_Languages") + labs(title = "Programming_Language vs Total_Salary" )+scale_x_discrete(name = "Programming_Languages") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+Programming Languages in Depth
+
+```{r}
+
+ggplot(S_DATAA, aes(reorder(Programming_Languages_Lower, -Count), Count, color = Programming_Languages_Lower)) + geom_point(size = 5) + labs(title = "Most preferred Programming Languages") + scale_x_discrete(name = "Programming_Languages") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+Positions and Their Preferred Programming Language
+
+```{r}
+#Software Engineer
+
+n_data %>% filter(Position == "Software Engineer") %>% select(Programming_Languages_Lower) %>% group_by(Programming_Languages_Lower) %>% summarize(Count = n()) %>% arrange(desc(Count))
+```
+```{r}
+#Backend Developer
+d_data = n_data %>% filter(Position == "Backend Developer") %>% select(Programming_Languages_Lower) %>% group_by(Programming_Languages_Lower) %>% summarize(Count = n()) %>% arrange(desc(Count))
+
+c_data = d_data[-c(8),]
+c_data
+```
+```{r}
+#Data Scientist
+w_data = n_data %>% filter(Position == "Data Scientist") %>% select(Programming_Languages_Lower) %>% group_by(Programming_Languages_Lower) %>% summarize(Count = n()) %>% arrange(desc(Count))
+
+W_data = w_data[-c(2,4,9),]
+W_data
+```
+By the above analysis we can see that Java/Python are one of the most preferred Programming languages by the top 3 Job Positions.
+
+Other Technologies/Programming Languages that are used often
+
+```{r}
+#Cleaning the Data
+z_data = p_earnings %>% mutate(Other_Programming_Languages_Lower = tolower(p_earnings$Other_programming_languages))
+vec1 = z_data$Other_Programming_Languages_Lower
+
+vec2 = paste(shQuote(vec1), collapse = ",")
+
+DF = as.data.frame(vec2, col.names=c("Other Programming"))
+
+Df = data.frame(DF = unlist(strsplit(as.character(DF$vec2),",")))
+
+Final_data = Df %>% mutate_all(funs(gsub("[[:punct:]]", "", .)))
+
+fff = Final_data%>%
+  group_by(DF)%>% summarize(count = sum(n()))%>% arrange(desc(count))
+fd = fff[-c(8,9),]
+fg = fd[1:10,]
+
+fg%>%
+  ggplot(aes(reorder(DF, -count),count, color = DF)) + geom_point(size = 5) + labs(title = "Most preferred Other Programming Languages") + scale_x_discrete(name = "Other_Programming_Languages") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+
+  
+  
+***************************************Mohammed Ismail Shaikh*******************************
+
+```{r}
+#Highest Number of Full time employees works in which role. 
+
+ft = df %>% 
+  mutate(Total_Salary = Annual_salary_without_bonus + Annual_bonus_stocks) %>%
+  filter(Employment_status =="Full-time employee")%>%
+  select(Position,City,Employment_status, Total_Salary )%>%
+  group_by(Position) %>%
+  summarize(Count = n()) %>% 
+  arrange(desc(Count))
+
+ft
+
+ft_df = ft[1:10,]
+ft_df
+
+ggplot(data = ft_df, aes(x = Count, y = Position, color = Position))+
+  geom_point()
+
+
+```
+
+```{r}
+#Top 10 full time employees having highest salary
+flt = df %>% 
+  mutate(Total_Salary = Annual_salary_without_bonus + Annual_bonus_stocks) %>%
+  filter(Employment_status =="Full-time employee")%>%
+  select(Position,City,Employment_status, Seniority_level,Total_Salary )%>%
+  arrange(desc(Total_Salary))
+
+flt
+```
+
+
+********************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+
+***************************************JEET KADAM*************************************
+
+
+
+
+
+
+
+
+
+
+
+
+********************************************************************************************************************************************************************************************************************************************************************************************************************************************************
+
+***************************************Mohammed Zaki Shaikh*******************************
+
+```{r}
+# Exploring Company_type variable
+
+ct = df %>% 
+  group_by(Company_type) %>%
+  count %>%
+  #mutate(Company_type = ifelse(1:n() < 2, "Other", Company_type)) %>%
+  filter(n > 2) 
+  ct
+  ggplot(ct,aes(x = Company_type, y = n)) + 
+  geom_bar(stat = "identity",fill="steelblue")+
+  geom_text(aes(label=n), vjust=-0.3, size=3.5)
+  
+
+```
+
+```{r}
+
+# Exploring Salary vs Company_type
+  c_earnings = df %>% mutate(Total_Salary = Annual_salary_without_bonus + Annual_bonus_stocks) 
+  
+  earnings = c_earnings %>% select(Company_type, Total_Salary) %>% 
+    group_by(Company_type) %>%
+    summarize(Salary = sum(Total_Salary)) %>% 
+    arrange(desc(Salary))
+  
+  earnings
+  
+  cs_earnings = earnings[2:10,]
+  
+  cs_earnings
+  
+ggplot(cs_earnings, aes(x=Company_type,y=Salary)) + 
+  geom_bar(stat = "identity",fill="steelblue")+
+  geom_text(aes(label=Salary), vjust=-0.3, size=4.5)+
+  scale_y_continuous(labels = comma) 
+
+```
+
+```{r}
+# Exploring Company_type vs other variables
+
+# DataScientist's mean income in different Company 
+cvearnings = c_earnings %>% filter(Position =="Data Scientist")%>%select(Position,Company_type,Total_Salary)%>%
+  group_by(Company_type)%>%summarize(Salary = mean(Total_Salary)) %>%
+  arrange(desc(Salary))
+cvearnings
+
+cvpearnings = cvearnings[1:20,]
+cvpearnings
+ggplot(cvpearnings, aes(x=Salary,y=Company_type, color="Data Scientist")) + 
+  geom_bar(stat = "identity",fill="steelblue")+theme(legend.position="bottom")+
+  geom_text(aes(label=Salary), vjust=-0.1,hjust=-0.1, size=3.5)+
+  scale_x_continuous(labels = comma)
+
+
+```
+```{r}
+language = df %>% select(Programming_Language,Company_type) %>%
+  group_by(Company_type,Programming_Language) %>%
+  count %>%
+  #mutate(Company_type = ifelse(1:n() < 2, "Other", Company_type)) %>%
+  filter(n > 2) 
+
+language
+  ggplot(language,aes(x = Company_type, y = Programming_Language)) + 
+  geom_point()
+```
+
+
+
+
+
